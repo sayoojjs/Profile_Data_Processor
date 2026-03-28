@@ -1,0 +1,37 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\plugins\\profile_data_processor\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\profile_data_processor\\module.profile_data_processor.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\intermediate\\build\\win64\\x64\\profiledcpeditor\\development\\unrealed\\sharedpch.unrealed.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\plugins\\profile_data_processor\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\profile_data_processor\\definitions.profile_data_processor.h",
+            "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\plugins\\profile_data_processor\\source\\profile_data_processor\\private\\profile_data_processor.cpp",
+            "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\plugins\\profile_data_processor\\source\\profile_data_processor\\public\\profile_data_processor.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\editor\\leveleditor\\public\\leveleditor.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\editor\\leveleditor\\public\\ileveleditor.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\engine\\public\\elements\\framework\\engineelementslibrary.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\engineelementslibrary.generated.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\editor\\leveleditor\\public\\viewporttypedefinition.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\editor\\leveleditor\\public\\leveleditoroutlinersettings.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\developer\\toolwidgets\\public\\filters\\genericfilter.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\developer\\toolwidgets\\public\\filters\\filterbase.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\projects\\public\\interfaces\\ipluginmanager.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\projects\\public\\plugindescriptor.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\projects\\public\\custombuildsteps.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\projects\\public\\localizationdescriptor.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\projects\\public\\moduledescriptor.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\projects\\public\\pluginreferencedescriptor.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\projects\\public\\versescope.h",
+            "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\plugins\\profile_data_processor\\source\\profile_data_processor\\private\\profile_data_processorcommands.cpp",
+            "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\plugins\\profile_data_processor\\source\\profile_data_processor\\public\\profile_data_processorcommands.h",
+            "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\plugins\\profile_data_processor\\source\\profile_data_processor\\public\\profile_data_processorstyle.h",
+            "c:\\users\\sayoo\\documents\\unreal projects\\profiledcp\\plugins\\profile_data_processor\\source\\profile_data_processor\\private\\profile_data_processorstyle.cpp",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\slatecore\\public\\styling\\slatestyleregistry.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\engine\\public\\slate\\slategameresources.h",
+            "c:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\slatecore\\public\\styling\\slatestylemacros.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

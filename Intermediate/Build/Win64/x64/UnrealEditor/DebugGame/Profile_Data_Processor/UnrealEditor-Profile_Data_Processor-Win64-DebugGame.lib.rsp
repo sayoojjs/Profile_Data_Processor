@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-Profile_Data_Processor-Win64-DebugGame.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\Users\sayoo\Documents\Unreal Projects\ProfileDCP\Intermediate\Build\Win64\x64\ProfileDCPEditor\DebugGame\UnrealEd\SharedPCH.UnrealEd.NonOptimized.Cpp20.h.obj"
+"C:\Users\sayoo\Documents\Unreal Projects\ProfileDCP\Plugins\Profile_Data_Processor\Intermediate\Build\Win64\x64\UnrealEditor\DebugGame\Profile_Data_Processor\Module.Profile_Data_Processor.cpp.obj"
+"C:\Users\sayoo\Documents\Unreal Projects\ProfileDCP\Plugins\Profile_Data_Processor\Intermediate\Build\Win64\x64\UnrealEditor\DebugGame\Profile_Data_Processor\Default.rc2.res"
+/OUT:"C:\Users\sayoo\Documents\Unreal Projects\ProfileDCP\Plugins\Profile_Data_Processor\Intermediate\Build\Win64\x64\UnrealEditor\DebugGame\Profile_Data_Processor\UnrealEditor-Profile_Data_Processor-Win64-DebugGame.lib"

@@ -1,0 +1,10 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.Profile_Data_Processor.cpp.obj": [
+			"Profile_Data_Processor.cpp.obj",
+			"Profile_Data_ProcessorCommands.cpp.obj",
+			"Profile_Data_ProcessorStyle.cpp.obj"
+		]
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Profile_Data_Processor",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "9sAE7",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "Profile_Data_Processor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
