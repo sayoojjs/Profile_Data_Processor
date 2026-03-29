@@ -8,7 +8,7 @@ AI-powered performance dataset analyzer for Unreal Engine profiling workflows.
 
 **PDPC (Profile Dataset Processing Client)** is a tool designed to analyze Unreal Engine performance datasets (CSV profiling data) using **locally hosted Large Language Models (LLMs)**.
 
-It converts raw profiling data into **clear, structured insights**, helping developers quickly identify performance bottlenecks, understand root causes, and apply fixes efficiently.
+It converts raw profiling data into **structured insights**, helping developers quickly identify performance bottlenecks, understand root causes, and apply fixes efficiently.
 
 ---
 
@@ -40,7 +40,7 @@ It converts raw profiling data into **clear, structured insights**, helping deve
   - Unreal Engine–focused recommendations
 
 - 🎨 **Structured HTML Reports**
-  - Clean, colorful, and organized output
+  - Organized output
   - Easy-to-read analysis sections
 
 ---
