@@ -111,10 +111,8 @@ Make sure your local model server is running.
 - Click Stop & Launch PDPC
 
 
-##From PDPClient:
-```
-python PDPC.py
-```
+## From PDPClient:
+
 - Set server address
 - Select the language model that you prefer to use
 - Run analysis
