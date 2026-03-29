@@ -18,7 +18,7 @@ from collections import deque
 
 CONFIG_FILE = "config.json"
 
-# 🎨 Colors
+
 BG = "#003153"
 TAB = "#0b3d5c"
 ACTIVE = "#1f5f8b"
