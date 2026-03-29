@@ -65,10 +65,26 @@ PDPC includes an **Unreal Editor Toolbar Plugin**.
 - Pandas
 - Matplotlib
 - Tkinter
-- HTML/CSS
-- Local LLM APIs (Ollama / LM Studio)
-- Unreal Engine C++ (Slate UI)
+- Local LLM API (Ollama)
 
 ---
 
-## 📂 Project Structure
+
+## ⚙️ Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/PDPC.git
+```
+### Unreal Plugin Setup
+Copy the plugin folder into:
+
+```YourProject/Plugins/
+```
+Open Unreal Engine
+```
+Go to Edit → Plugins
+Enable PDPClient
+```
+Restart the editor
