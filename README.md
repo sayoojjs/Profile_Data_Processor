@@ -77,7 +77,7 @@ PDPC includes an **Unreal Editor Toolbar Plugin**.
 ```bash
 git clone https://github.com/sayoojjs/Profile_Data_Processor.git
 ```
-### 2. Unreal Plugin Setup
+### 2. PDP Plugin Setup
 Copy the plugin folder into:
 ```
 YourProject/Plugins/
