@@ -95,7 +95,7 @@ Install required dependencies:
 ```
 pip install pandas matplotlib tkhtmlview requests
 ```
-###4. Setup Local LLM
+### 4. Setup Local LLM
 
 - Ollama
 
