@@ -111,10 +111,12 @@ Make sure your local model server is running.
 - Click Stop & Launch PDPC
 
 
-##From Python (Standalone):
+##From PDPClient:
 ```
 python PDPC.py
 ```
-- Select your CSV file
+- Set server address
+- Select the language model that you prefer to use
 - Run analysis
 - View generated HTML report
+- Export as HTML for better viewing 
