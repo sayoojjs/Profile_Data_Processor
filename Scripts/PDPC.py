@@ -6,6 +6,10 @@ import threading
 import os
 import json
 import random
+import base64
+import io
+import re
+import csv as csv_mod
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -18,6 +22,9 @@ CONFIG_FILE = "config.json"
 BG = "#003153"
 TAB = "#0b3d5c"
 ACTIVE = "#1f5f8b"
+
+# Columns that are frame counters / indices — excluded from charts and tables
+_FRAME_COLS = {"frame", "frameindex", "framecounter", "framenum", "framenumber"}
 
 
 class CSVAnalyzerApp:
@@ -32,6 +39,8 @@ class CSVAnalyzerApp:
         self.csv_file = None
         self.config = {}
         self._last_html = ""
+        self._bar_b64 = None
+        self._line_b64 = None
 
         self.project_dir = self.find_project_root()
         self.csv_folder = os.path.join(self.project_dir, "Saved", "Profiling", "CSV")
@@ -160,14 +169,14 @@ class CSVAnalyzerApp:
                   command=self.stop_analysis,
                   bg="#cc3300", fg="white").pack(side="left", padx=5)
 
-        # ---------------- HTML Report Viewer (replaces Text widget) ----------------
+        # ---------------- HTML Report Viewer ----------------
         html_frame = tk.Frame(self.root, bg=BG)
         html_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         self.html_label = HTMLLabel(
             html_frame,
             html="<h2 style='color:#aad4f5;' style='text-align: center;'>Press Go to begin</h2>",
-            background="#0b1f33"
+            background="#4b4e51"
         )
         self.html_label.pack(side="left", fill="both", expand=True)
 
@@ -276,44 +285,206 @@ class CSVAnalyzerApp:
                             sample[j] = line
                 return "".join(sample)
 
+    # ---------------- UE VALUE FORMATTER ----------------
+    @staticmethod
+    def _format_ue_value(col_name, value):
+        """
+        Format a numeric average the way Unreal Engine stat displays show it.
+        Timing values → ms, draw calls → integer, primitive counts → K/M,
+        memory → MB/GB, FPS → FPS.  Everything else falls back to ms.
+        """
+        c = col_name.lower()
+
+        # Large geometry / object counts
+        count_kw = ("primitives", "triangles", "polys", "polygon",
+                    "vertices", "instances", "batches", "objects", "meshes")
+        if any(k in c for k in count_kw):
+            if value >= 1_000_000:
+                return f"{value / 1_000_000:.2f} M"
+            if value >= 1_000:
+                return f"{value / 1_000:.1f} K"
+            return f"{int(round(value)):,}"
+
+        # Draw calls
+        if "drawcall" in c or c == "drawcalls":
+            return f"{int(round(value)):,}"
+
+        # Memory
+        if "memory" in c or c.startswith("mem"):
+            if value >= 1024:
+                return f"{value / 1024:.2f} GB"
+            return f"{value:.1f} MB"
+
+        # FPS / frame rate
+        if "fps" in c or "framerate" in c or "frame_rate" in c:
+            return f"{value:.1f} FPS"
+
+        # Percentage stats
+        if "percent" in c or c.endswith("%") or "utilization" in c:
+            return f"{value:.1f}%"
+
+        # Default: timing in ms (covers GameThread, RenderThread, GPU, RHIThread,
+        # Slate/*, Task/*, etc.)
+        return f"{value:.2f} ms"
+
+    # ---------------- CSV LOADING / NUMERIC EXTRACTION ----------------
+    def _load_numeric_df(self):
+        """
+        Load self.csv_file fresh, coerce mixed-type columns (e.g. '12.3ms')
+        to float, drop frame-index columns, drop all-NaN and constant columns.
+        Returns a clean numeric DataFrame where every column has real variance.
+        Raises ValueError with a human-readable message if no usable data found.
+        """
+        df = pd.read_csv(self.csv_file, engine="python", on_bad_lines="skip")
+        df.columns = [c.strip() for c in df.columns]
+
+        # Strip whitespace from string cells
+        df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
+
+        # Coerce every column: handles pure numbers and values like '12.3ms', '8%'
+        for col in df.columns:
+            if col.lower() in _FRAME_COLS:
+                continue  # skip frame index columns entirely
+            converted = pd.to_numeric(df[col], errors="coerce")
+            # Only replace if at least 50% of rows parsed as a number
+            if converted.notna().sum() >= max(1, len(df) * 0.5):
+                df[col] = converted
+
+        numeric_df = df.select_dtypes(include="number")
+
+        # Remove frame index columns that slipped through
+        numeric_df = numeric_df[[
+            c for c in numeric_df.columns if c.lower() not in _FRAME_COLS
+        ]]
+
+        # Drop fully-NaN columns
+        numeric_df = numeric_df.dropna(axis=1, how="all")
+
+        # Drop constant columns (nothing to chart)
+        numeric_df = numeric_df.loc[:, numeric_df.nunique() > 1]
+
+        if numeric_df.empty:
+            raise ValueError("No numeric columns with variance found in this CSV.")
+
+        avgs = numeric_df.mean(skipna=True).dropna()
+        if avgs.empty:
+            raise ValueError("Could not compute averages — all columns are NaN.")
+
+        return numeric_df, avgs
+
     # ---------------- CHART GENERATION ----------------
+    def _clear_chart_state(self):
+        """Destroy all previous chart data and every open matplotlib figure."""
+        self._bar_b64 = None
+        self._line_b64 = None
+        plt.close("all")
+
+    def _encode_fig(self, fig):
+        """Save a figure to an in-memory PNG, base64-encode it, close it, return data URI."""
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", dpi=90)
+        plt.close(fig)
+        buf.seek(0)
+        return "data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8")
+
     def generate_charts(self):
-        """Build bar + line charts from CSV, return (bar_path, line_path, table_html)."""
+        """
+        Generate bar chart, line chart, and stats table entirely from the
+        currently loaded CSV.  Every call reads the file fresh — no state
+        is reused from a previous run.
+
+        Returns (bar_b64, line_b64, table_html).
+        On error returns (None, None, error_html_string).
+        """
         try:
-            df = pd.read_csv(self.csv_file, engine="python", on_bad_lines="skip")
-            df.columns = [c.strip() for c in df.columns]
-            numeric_df = df.select_dtypes(include="number")
+            numeric_df, avgs = self._load_numeric_df()
+        except ValueError as e:
+            return None, None, f"<p><b>Chart error:</b> {e}</p>"
+        except Exception as e:
+            return None, None, f"<p><b>Chart error (load):</b> {e}</p>"
 
-            avg = numeric_df.mean().sort_values(ascending=False)
-            top10 = avg.head(10)
+        try:
+            fname = os.path.basename(self.csv_file)
 
-            # Bar chart
-            bar_path = os.path.abspath("chart_bar.png")
-            plt.figure(figsize=(7, 3.5))
-            top10.plot(kind="bar", color="#1f5f8b")
-            plt.xticks(rotation=45, ha="right", fontsize=8)
-            plt.title("Top Metrics (Average)", fontsize=10)
-            plt.tight_layout()
-            plt.savefig(bar_path, dpi=90)
-            plt.close()
+            # ---- Split metrics into timing-scale and count-scale ----
+            # UE timing stats (ms) live roughly in 0–5000.
+            # Count stats (draw calls, primitives) live above that.
+            timing_avgs = avgs[(avgs >= 0) & (avgs < 5000)].sort_values(ascending=False)
+            count_avgs  = avgs[avgs >= 5000].sort_values(ascending=False)
 
-            # Line chart – top 3 columns
-            line_path = os.path.abspath("chart_line.png")
-            top3_cols = top10.index[:3]
-            plt.figure(figsize=(7, 3))
-            for col in top3_cols:
-                plt.plot(numeric_df[col].values, label=col)
-            plt.legend(fontsize=8)
-            plt.title("Performance Over Time (Top 3)", fontsize=10)
-            plt.tight_layout()
-            plt.savefig(line_path, dpi=90)
-            plt.close()
+            # Bar chart: prefer timing metrics because they're the primary perf signal.
+            # Fall back to all metrics if no timing cols exist.
+            bar_source = timing_avgs if not timing_avgs.empty else avgs
+            n_bar = min(10, len(bar_source))
+            bar_metrics = bar_source.head(n_bar)
 
-            table_html = top10.to_frame(name="Average").to_html(border=1)
-            return bar_path, line_path, table_html
+            # ---- Bar chart ----
+            fig_bar, ax_bar = plt.subplots(figsize=(7, 3.5))
+            x = range(len(bar_metrics))
+            bars = ax_bar.bar(x, bar_metrics.values, color=ACTIVE)
+            ax_bar.set_xticks(list(x))
+            ax_bar.set_xticklabels(bar_metrics.index, rotation=45, ha="right", fontsize=8)
+            # Y-axis: label in ms if all bar_source values < 5000, otherwise raw
+            if bar_source is timing_avgs:
+                ax_bar.set_ylabel("ms", fontsize=8)
+                ax_bar.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda v, _: f"{v:.1f}")
+                )
+            ax_bar.set_title(f"Timing Metrics — Avg per Frame  [{fname}]", fontsize=9)
+            # Value labels on top of each bar
+            for rect, val in zip(bars, bar_metrics.values):
+                ax_bar.text(
+                    rect.get_x() + rect.get_width() / 2,
+                    rect.get_height() * 1.01,
+                    self._format_ue_value(bar_metrics.index[list(bar_metrics.values).index(val)], val),
+                    ha="center", va="bottom", fontsize=7, clip_on=True
+                )
+            fig_bar.tight_layout()
+            bar_b64 = self._encode_fig(fig_bar)
+
+            # ---- Line chart: top 3 timing metrics over all frames ----
+            line_source = timing_avgs if not timing_avgs.empty else avgs
+            n_line = min(3, len(line_source))
+            line_cols = line_source.index[:n_line]
+
+            fig_line, ax_line = plt.subplots(figsize=(7, 3))
+            for col in line_cols:
+                series = numeric_df[col].dropna().reset_index(drop=True)
+                if not series.empty:
+                    ax_line.plot(series.values, label=f"{col}")
+            ax_line.set_xlabel("Frame", fontsize=8)
+            ax_line.set_ylabel("ms", fontsize=8)
+            ax_line.legend(fontsize=8)
+            ax_line.set_title(
+                f"Performance Over Time — Top {n_line} Timing Metrics  [{fname}]", fontsize=9
+            )
+            fig_line.tight_layout()
+            line_b64 = self._encode_fig(fig_line)
+
+            # ---- Stats table (UE-style formatted values) ----
+            # Show timing metrics first, then count metrics — mirrors UE stat display order
+            table_rows = []
+            for col, val in timing_avgs.items():
+                table_rows.append({"Stat": col,
+                                   "Avg": self._format_ue_value(col, val),
+                                   "Min": self._format_ue_value(col, numeric_df[col].min()),
+                                   "Max": self._format_ue_value(col, numeric_df[col].max())})
+            for col, val in count_avgs.items():
+                table_rows.append({"Stat": col,
+                                   "Avg": self._format_ue_value(col, val),
+                                   "Min": self._format_ue_value(col, numeric_df[col].min()),
+                                   "Max": self._format_ue_value(col, numeric_df[col].max())})
+
+            if table_rows:
+                tdf = pd.DataFrame(table_rows).set_index("Stat")
+                table_html = tdf.to_html(border=1)
+            else:
+                table_html = "<p>No stats available.</p>"
+
+            return bar_b64, line_b64, table_html
 
         except Exception as e:
-            return None, None, f"<p><b>Chart error:</b> {e}</p>"
+            return None, None, f"<p><b>Chart error (render):</b> {e}</p>"
 
     # ---------------- ANALYSIS ----------------
     def start_analysis(self):
@@ -339,31 +510,33 @@ class CSVAnalyzerApp:
 
     def analyze(self):
         try:
-            # --- Step 1: Charts ---
+            # Step 0 — destroy every trace of the previous run before touching anything
+            self._clear_chart_state()
+            self._last_html = ""
+
+            # Step 1 — generate charts fresh from the currently loaded CSV
             self.set_progress(20, "Generating charts...")
-            bar_path, line_path, table_html = self.generate_charts()
+            bar_b64, line_b64, table_html = self.generate_charts()
             if self.stop_flag:
                 return
 
-            # --- Step 2: CSV sample for AI ---
+            self._bar_b64 = bar_b64
+            self._line_b64 = line_b64
+
+            # Step 2 — sample CSV text for AI
             self.set_progress(40, "Processing CSV...")
             data = self.process_data()
             if self.stop_flag:
                 return
 
-            # --- Step 3: Ollama request ---
+            # Step 3 — Ollama request
             payload = {
                 "model": self.model_var.get(),
-                "prompt": f"""Analyze Unreal Engine profiling CSV.
-
-Return structured:
-[ISSUE]
-Cause:
-Fix:
-
-CSV:
-{data}
-""",
+                "prompt": (
+                    "Analyze Unreal Engine profiling CSV.\n\n"
+                    "Return structured:\n[ISSUE]\nCause:\nFix:\n\n"
+                    f"CSV:\n{data}\n"
+                ),
                 "stream": False
             }
             self.set_progress(70, "Analyzing your capture data...")
@@ -374,28 +547,31 @@ CSV:
             )
             try:
                 result_json = self.current_request.json()
-            except:
+            except Exception:
                 text = self.current_request.text.strip().split("\n")[-1]
                 result_json = json.loads(text)
 
             analysis = result_json.get("response", "")
 
-            # ---- HTML ----
-            html = f"""
-        <h1>Unreal Profiling Report</h1>
+            # Step 4 — build self-contained HTML (images are embedded as data URIs)
+            bar_tag  = (f'<img src="{self._bar_b64}">'
+                        if self._bar_b64 else "<p><i>Bar chart unavailable</i></p>")
+            line_tag = (f'<img src="{self._line_b64}">'
+                        if self._line_b64 else "<p><i>Line chart unavailable</i></p>")
 
-        <h2>Top Metrics</h2>
-        <img src="chart_bar.png">
+            html = (
+                "<h1>Unreal Profiling Report</h1>"
+                f"<p><b>Dataset:</b> {os.path.basename(self.csv_file)}</p>"
+                "<h2>Timing Metrics (Average per Frame)</h2>"
+                f"{bar_tag}"
+                "<h2>Performance Over Time</h2>"
+                f"{line_tag}"
+                "<h2>Stats Table</h2>"
+                f"{table_html}"
+                "<h2>Analysis Report</h2>"
+                f"<pre>{analysis}</pre>"
+            )
 
-        <h2>Performance Over Time</h2>
-        <img src="chart_line.png">
-
-        <h2>Table</h2>
-        {table_html}
-
-        <h2>AI Analysis</h2>
-        <pre>{analysis}</pre>
-        """
             self._last_html = html
             self.root.after(0, lambda: self.html_label.set_html(html))
             self.set_progress(100, "Done")
@@ -425,16 +601,12 @@ CSV:
             self.set_progress(30, "Processing query...")
             res = requests.post(
                 f"{self.url_entry.get()}/api/generate",
-                json={
-                    "model": self.model_var.get(),
-                    "prompt": q,
-                    "stream": False
-                },
+                json={"model": self.model_var.get(), "prompt": q, "stream": False},
                 timeout=(3, None)
             )
             try:
                 data = res.json()
-            except:
+            except Exception:
                 text = res.text.strip().split("\n")[-1]
                 data = json.loads(text)
             self.show_result(data.get("response", ""))
@@ -465,11 +637,8 @@ CSV:
                 content = self._last_html
             elif ext == "csv":
                 plain = self._strip_html(self._last_html)
-                import re
                 lines = [l.strip() for l in plain.splitlines() if l.strip()]
                 rows = [["Line", "Content"]] + [[str(i + 1), l] for i, l in enumerate(lines)]
-                import csv as csv_mod
-                import io
                 buf = io.StringIO()
                 writer = csv_mod.writer(buf)
                 writer.writerows(rows)
@@ -491,15 +660,15 @@ CSV:
                  font=("Lato", 13, "bold")).pack(pady=(18, 4))
         tk.Label(win, text="Made by 9sAE7\nLicensed under GPL 3.0", bg=BG, fg="white",
                  font=("Arial", 10)).pack()
-        link = tk.Label(win, text="https://github.com/sayoojjs",
+        link = tk.Label(win, text="https://github.com/sayoojjs/Profile_Data_Processor",
                         bg=BG, fg="#4da6ff", font=("Arial", 9, "underline"),
                         cursor="hand2")
         link.pack(pady=(2, 10))
-        link.bind("<Button-1>", lambda e: __import__("webbrowser").open("https://github.com/sayoojjs"))
+        link.bind("<Button-1>", lambda e: __import__("webbrowser").open(
+            "https://github.com/sayoojjs/Profile_Data_Processor"))
 
     @staticmethod
     def _strip_html(html):
-        import re
         return re.sub(r"<[^>]+>", "", html)
 
     # ---------------- POPUP RESULT (Ask tab) ----------------
