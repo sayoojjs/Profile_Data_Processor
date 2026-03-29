@@ -55,7 +55,7 @@ PDPC includes an **Unreal Editor Toolbar Plugin**.
 
 - **Stop & Launch PDPC**
   - Stops capture
-  - Automatically launches PDPC analysis
+  - Automatically launches PDPClient
 
 ---
 
