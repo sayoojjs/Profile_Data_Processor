@@ -79,8 +79,8 @@ git clone https://github.com/YOUR_USERNAME/PDPC.git
 ```
 ### Unreal Plugin Setup
 Copy the plugin folder into:
-
-```YourProject/Plugins/
+```
+YourProject/Plugins/
 ```
 Open Unreal Engine
 ```
