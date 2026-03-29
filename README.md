@@ -89,7 +89,7 @@ Enable PDPClient
 ```
 Restart the editor
 
-###3. Python Setup
+### 3. Python Setup
 
 Install required dependencies:
 ```
@@ -101,9 +101,9 @@ pip install pandas matplotlib tkhtmlview requests
 
 Make sure your local model server is running.
 
-# ▶️ Usage
+## ▶️ Usage
 
-## From Unreal Engine:
+### From Unreal Engine:
 
 - Click PDPClient Toolbar Button
 - Click Start Capture
