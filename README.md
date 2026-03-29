@@ -105,7 +105,7 @@ Make sure your local model server is running.
 
 ### From Unreal Engine:
 
-- Click PDPClient Toolbar Button
+- Go to the menubar and click Profile Data Processor
 - Click Start Capture
 - Run your scene/game
 - Click Stop & Launch PDPC
