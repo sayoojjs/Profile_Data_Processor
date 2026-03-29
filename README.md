@@ -88,3 +88,23 @@ Go to Edit → Plugins
 Enable PDPClient
 ```
 Restart the editor
+
+###3. Python Setup
+
+Install required dependencies:
+```
+pip install pandas matplotlib tkhtmlview requests
+```
+###4. Setup Local LLM
+
+- Ollama
+
+Make sure your local model server is running.
+
+From Python (Standalone):
+```
+python PDPC.py
+```
+- Select your CSV file
+- Run analysis
+- View generated HTML report
