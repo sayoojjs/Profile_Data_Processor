@@ -101,7 +101,17 @@ pip install pandas matplotlib tkhtmlview requests
 
 Make sure your local model server is running.
 
-From Python (Standalone):
+#▶️ Usage
+
+##From Unreal Engine:
+
+- Click PDPClient Toolbar Button
+- Click Start Capture
+- Run your scene/game
+- Click Stop & Launch PDPC
+
+
+##From Python (Standalone):
 ```
 python PDPC.py
 ```
