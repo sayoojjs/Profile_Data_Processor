@@ -77,7 +77,7 @@ PDPC includes an **Unreal Editor Toolbar Plugin**.
 ```bash
 git clone https://github.com/YOUR_USERNAME/PDPC.git
 ```
-### Unreal Plugin Setup
+### 2. Unreal Plugin Setup
 Copy the plugin folder into:
 ```
 YourProject/Plugins/
