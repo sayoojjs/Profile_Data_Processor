@@ -1,4 +1,4 @@
-# 🚀 PDPC – Profile Dataset Processing Client
+# 🚀 PDP – Profile Dataset Processor
 
 AI-powered performance dataset analyzer for Unreal Engine profiling workflows.
 
@@ -6,7 +6,7 @@ AI-powered performance dataset analyzer for Unreal Engine profiling workflows.
 
 ## 📌 Overview
 
-**PDPC (Profile Dataset Processing Client)** is a tool designed to analyze Unreal Engine performance datasets (CSV profiling data) using **locally hosted Large Language Models (LLMs)**.
+**PDP (Profile Dataset Processor)** is a tool designed to analyze Unreal Engine performance datasets (CSV profiling data) using **locally hosted Large Language Models (LLMs)**.
 
 It converts raw profiling data into **structured insights**, helping developers quickly identify performance bottlenecks, understand root causes, and apply fixes efficiently.
 
